@@ -1,10 +1,13 @@
+import sys
+sys.path.append('./')
 from gameBoard import *
 from darkPlayer import *
 import random
 
 game = gameBoard.gameBoard()
-d = Player(DARKPLAYER,1,[], game.startState())
-l = Player(LIGHTPLAYER,1,[], game.startState())
+d = Player(DARKPLAYER,1,[])
+l = Player(LIGHTPLAYER,1,[])
+game.startState()
 game.drawBoard()
 move = d.generateFirstMove_Dark()
 print move
@@ -21,13 +24,22 @@ game.updateBoard((2,2), None, DARK)
 game.updateBoard((4,4), None, DARK)
 game.updateBoard((8,4), None, DARK)
 game.updateBoard((8,6), None, DARK)
+game.updateBoard((6,6), None, DARK)
 print "--------"
 game.drawBoard()
-movable = game.getDarkCell()
+moveable = game.getDarkCell()
 unmoveable = game.getLightCell()
 emptyCells = game.getEmptyCell()
-p = d.generatePossibleMoves(game, DARK)
-#j = d.generateMultipleJumps_Helper(p, game, (8,2), unmoveable, emptyCells, DARK, 2)
-#j = d.generateMultipleJumps(DARK,p, game, unmoveable, emptyCells)
-print "******"
+p = d.generatePossibleMoves(game, DARKPLAYER)
+pl = l.generatePossibleMoves(game, LIGHTPLAYER)
+print "DARKPLAYER"
 print p
+print "LIGHTPLAYER"
+print pl
+print "----------"
+result = d.availableMoves(game,DARKPLAYER)
+print result
+
+#print "#DARK: " + str(len(moveable))
+#print "#LIGHT: " + str(len(unmoveable))
+#print d.minimax(DARKPLAYER,game,6)

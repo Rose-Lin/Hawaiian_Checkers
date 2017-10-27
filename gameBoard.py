@@ -35,7 +35,7 @@ class gameBoard:
         return self.board
 
     def getCellInfo (self, position):
-        return self.board[position[0]][position[1]]
+        return self.board[position[0]-1][position[1]-1]
 
     def getEmptyCell(self):
         emptyCells = []

@@ -3,23 +3,77 @@ sys.path.append("./")
 import gameBoard
 import copy
 from random import randint
+import math
+from Node import *
+import util
 
 DARKPLAYER = 1
 LIGHTPLAYER = 0
+DARK = 'X'
+LIGHT = 'O'
+EMPTY = '.'
+MAX = 1
+MIN = 0
 POSSIBLE_FIRST_MOVE_DARK = [(8,8),(1,1),(5,5),(4,4)]
 
 class Player:
 
-    def __init__(self, identity, round, moves, gameState):
+    def __init__(self, identity, round, moves):
         self.identity = identity
         self.moves = moves
         self.round = round
-        self.gameState = gameState
 
-    def search(self, gameState):
-        #search algorithm
-        mover = ()
-        return move
+    def minimax(self, identity, gameBoard,depth_limit,move=None,level=1 ):
+        if level == depth_limit:
+            return self.evaluation(gameBoard,identity), move
+        possibleMoves = self.generatePossibleMoves(gameBoard, identity)
+        frontier = util.Queue()
+
+        currentState = Node(gameBoard,None,level,move)
+        for start in possibleMoves.keys():
+            for end in possibleMoves[start]:
+                game = copy.deepcopy(gameBoard)
+                game.board = game.updateBoard(start,end,identity)
+                newNode = Node(game, currentState, currentState.level+1,(start,end))
+                frontier.push(newNode)
+        if self.tellMinMax(level):
+            currentBestValue = -9999
+            while not frontier.isEmpty():
+                currentNode = frontier.pop()
+                bestValue, move = self.minimax(identity, currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
+                if bestValue > currentBestValue:
+                    currentBestValue = bestValue
+                    bestMove = move
+            return currentBestValue, bestMove
+        else:
+            print MIN, level
+            currentBestValue = 9999
+            while not frontier.isEmpty():
+                currentNode = frontier.pop()
+                if identity:
+                    newID = LIGHTPLAYER
+                else:
+                    newID = DARKPLAYER
+                bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
+                if bestValue < currentBestValue:
+                    currentBestValue = bestValue
+                    bestMove = move
+            return currentBestValue, bestMove
+
+    def tellMinMax(self, level):
+        if level % 2 == 0:
+            return MIN
+        return MAX
+
+    def evaluation(self, gameBoard,identity):
+        darkCells = gameBoard.getDarkCell()
+        lightCells = gameBoard.getLightCell()
+        darkScore = len(darkCells)
+        lightScore = len(lightCells)
+        if identity:
+            return darkScore - lightScore
+        else:
+            return lightScore - darkScore
 
     #The first move for DARKPLAYER
     def generateFirstMove_Dark(self):
@@ -47,10 +101,12 @@ class Player:
             moveable = gameBoard.getDarkCell()
             unmoveable = gameBoard.getLightCell()
         else:
-            movable = gameBoard.getLightCell()
+            moveable = gameBoard.getLightCell()
             unmoveable = gameBoard.getDarkCell()
         emptyCells = gameBoard.getEmptyCell()
         possibleMoves = self.__generatePossibleMoves_Helper(gameBoard, moveable, unmoveable, emptyCells)
+        print possibleMoves
+        print "^^^^^^^^^^^"
         possibleMoves = self.__generateMultipleJumps(identity, possibleMoves, gameBoard, unmoveable, emptyCells)
         return possibleMoves
         #return self.__generateMultipleJumps(identity, possibleMoves, gameBoard, moveable, unmoveable, emptyCells)
@@ -60,26 +116,27 @@ class Player:
         empty = copy.deepcopy(emptyCells)
         p = copy.deepcopy(possibleMoves)
         for move in possibleMoves.keys():
-            p = self.__generateMultipleJumps_Helper(p, game, move, unmoveable, empty, identity, 2)
+            #int (math.log(gameBoard.width,2))
+            p = self.__generateMultipleJumps_Helper(p, game, move, unmoveable, empty, identity, 3)
         return p
 
     #change the endPositions in possibleMoves, if the check can jump over multiple times
     #Since the check cannot turn, the maximun number of jump is 3
     #The count variable counts the time the check jumps [0:2]
     def __generateMultipleJumps_Helper(self,possibleMoves, game, move, unmoveable, empty, identity, count = 2):
+        empty_copy = copy.deepcopy(empty)
         if not count:
             return possibleMoves
         for m in possibleMoves[move]:
             game.updateBoard(move, m, identity)
-            if m in empty:
-                empty.remove(m)
-            new_move = self.__generatePossibleMoves_Helper(game, [m], unmoveable,empty)
+            if m in empty_copy:
+                empty_copy.remove(m)
+            new_move = self.__generatePossibleMoves_Helper(game, [m], unmoveable,empty_copy)
             if new_move:
                 for nm in new_move[m]:
                     if not self.__ifTurned(move, nm):
-                        possibleMoves[move] = [nm] + possibleMoves[move]
-                        possibleMoves[move].remove(m)
-        return self.__generateMultipleJumps_Helper(possibleMoves,game, move,unmoveable,empty,identity,count-1)
+                        possibleMoves[move] += [nm]
+        return self.__generateMultipleJumps_Helper(possibleMoves,game, move,unmoveable,empty_copy,identity,count-1)
 
 
     def __ifTurned(self, startPosition, endPosition):
@@ -133,5 +190,101 @@ class Player:
     def win(self, identity, gameBoard):
         if not self.generatePossibleMoves(gameBoard, identity):
             return False
+
+    #for a given move, return the features of cell east to it
+    #return (check, celPosition)
+    def getEast (self, gameBoard, move):
+        if not move[1] == gameBoard.width:
+            eastMove = (move[0], move[1]+1)
+            return gameBoard.getCellInfo(eastMove), eastMove
+        return None, None
+
+    def getWest (self, gameBoard, move):
+        if not move[1] == 1:
+            westMove = (move[0], move[1]-1)
+            return gameBoard.getCellInfo(westMove), westMove
+        return None, None
+
+    def getNorth(self, gameBoard, move):
+        if not move[0] == 1:
+            northMove = (move[0]-1, move[1])
+            return gameBoard.getCellInfo(northMove), northMove
+        return None, None
+
+    def getSouth(self, gameBoard, move):
+        if not move[0] == gameBoard.width:
+            southMove = (move[0]+1, move[1])
+            return gameBoard.getCellInfo(southMove), southMove
+        return None, None
+
+    def availableMoves(self, gameBoard, identity):
+        result = {}
+        if identity:
+            moveable = gameBoard.getDarkCell()
+            jumpOver = LIGHT
+        else:
+            movable = gameBoard.getLightCell()
+            jumpOver = DARK
+        for move in moveable:
+            eastMove = []
+            westMove = []
+            northMove = []
+            southMove = []
+            eastMove = self.jumpToEast(eastMove, gameBoard, identity, jumpOver, move)
+            westMove = self.jumpToWest(westMove, gameBoard, identity, jumpOver, move)
+            northMove = self.jumpToNorth(northMove, gameBoard, identity, jumpOver, move)
+            southMove = self.jumpToSouth(southMove, gameBoard, identity, jumpOver, move)
+            result[move] = eastMove + westMove + northMove + southMove
+        return result
+
+    #jump to east for a single check
+    #return a list of possible end position for the check
+    def jumpToEast(self, result, gameBoard, identity, jumpOver, moveable):
+        game = copy.deepcopy(gameBoard)
+        eastCell, eastPosition = self.getEast(gameBoard, moveable)
+        #if the cell in the east is opponent's check
+        if  eastCell == jumpOver:
+            emptyCell, emptyPosition = self.getEast(gameBoard, eastPosition)
+            if  emptyCell == EMPTY:
+                result.append(emptyPosition)
+                game.updateBoard(eastPosition, emptyPosition, identity)
+                self.jumpToEast(result, game, identity, jumpOver, emptyPosition)
+        return result
+
+    def jumpToWest (self, result, gameBoard, identity, jumpOver, moveable):
+        game = copy.deepcopy(gameBoard)
+        westCell, westPosition = self.getWest(gameBoard, moveable)
+        #if the cell in the east is opponent's check
+        if  westCell == jumpOver:
+            emptyCell, emptyPosition = self.getWest(gameBoard, westPosition)
+            if  emptyCell == EMPTY:
+                result.append(emptyPosition)
+                game.updateBoard(westPosition, emptyPosition, identity)
+                self.jumpToWest(result, game, identity, jumpOver, emptyPosition)
+        return result
+
+    def jumpToNorth(self, result, gameBoard, identity, jumpOver, moveable):
+        game = copy.deepcopy(gameBoard)
+        northCell, northPosition = self.getNorth(gameBoard, moveable)
+        #if the cell in the east is opponent's check
+        if  northCell == jumpOver:
+            emptyCell, emptyPosition = self.getNorth(gameBoard, northPosition)
+            if  emptyCell == EMPTY:
+                result.append(emptyPosition)
+                game.updateBoard(northPosition, emptyPosition, identity)
+                self.jumpToNorth(result, game, identity, jumpOver, emptyPosition)
+        return result
+
+    def jumpToSouth(self, result, gameBoard, identity, jumpOver, moveable):
+        game = copy.deepcopy(gameBoard)
+        southCell, southPosition = self.getSouth(gameBoard, moveable)
+        #if the cell in the east is opponent's check
+        if  southCell == jumpOver:
+            emptyCell, emptyPosition = self.getSouth(gameBoard, southPosition)
+            if  emptyCell == EMPTY:
+                result.append(emptyPosition)
+                game.updateBoard(southPosition, emptyPosition, identity)
+                self.jumpToSouth(result, game, identity, jumpOver, emptyPosition)
+        return result
 
 #missing multiple jumps situation
