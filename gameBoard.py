@@ -28,7 +28,31 @@ class gameBoard:
     def updateBoard(self, remove, add, identity):
         self.board[remove[0]-1][remove[1]-1] = EMPTY
         if add:
-            self.board[add[0]-1][add[0]-1] = identity
+            self.board[add[0]-1][add[1]-1] = identity
+            #moving south
+            if remove[0] < add[0]:
+                i = remove[0]
+                while (i < add[0]-1):
+                    self.board[i][add[1]-1] = EMPTY
+                    i += 1
+            #moving north
+            if remove[0] > add[0]:
+                i = remove[0]-2
+                while (i > add[0]-1):
+                    self.board[i][add[1]-1] = EMPTY
+                    i -= 1
+            #moving east
+            if remove[1] < add[1]:
+                i = remove[1]
+                while(i < add[1]-1):
+                    self.board[add[0]-1][i] = EMPTY
+                    i += 1
+            #moving west
+            if remove[1] > add[1]:
+                i = remove[1]-2
+                while(i > add[1]-1):
+                    self.board[add[0]-1][i] = EMPTY
+                    i -= 1
         return self.board
 
     def getGameState(self):

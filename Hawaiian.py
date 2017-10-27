@@ -39,7 +39,8 @@ print pl
 print "----------"
 result = d.availableMoves(game,DARKPLAYER)
 print result
-
-#print "#DARK: " + str(len(moveable))
-#print "#LIGHT: " + str(len(unmoveable))
-#print d.minimax(DARKPLAYER,game,6)
+#game.updateBoard((6,4),(6,2),DARK)
+#game.drawBoard()
+print "#DARK: " + str(len(moveable))
+print "#LIGHT: " + str(len(unmoveable))
+print d.minimax(DARK,game,2)
