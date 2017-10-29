@@ -23,7 +23,7 @@ class Player:
         self.moves = moves
         self.round = round
 
-    def minimax(self, identity, gameBoard,depth_limit,move=None,level=0 ):
+    def minimax(self, identity, gameBoard,depth_limit,alpha = -9999, beta = 9999, move=None,level=0 ):
         if identity:
             cell = DARK
         else:
@@ -43,7 +43,6 @@ class Player:
                     frontier.push(newNode)
         if self.tellMinMax(level+1) :
             currentBestValue = -9999
-            print "MAX"
             currentState.gameBoard.drawBoard()
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
@@ -51,18 +50,16 @@ class Player:
                     newID = LIGHTPLAYER
                 else:
                     newID = DARKPLAYER
-                bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
-                print identity
-                print move, bestValue
+                bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit, alpha, beta, currentNode.move,currentNode.level)
                 move = currentNode.move
-                if bestValue > currentBestValue:
-                    currentBestValue = bestValue
+                if bestValue > alpha:
+                    alpha = bestValue
                     bestMove = move
-                print "*****************************"
-            return currentBestValue, bestMove
+                if alpha >= beta:
+                    return beta, bestMove
+            return alpha, bestMove
         else:
             currentBestValue = 9999
-            print "MIN"
             currentState.gameBoard.drawBoard()
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
@@ -70,16 +67,14 @@ class Player:
                     newID = LIGHTPLAYER
                 else:
                     newID = DARKPLAYER
-                bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
-                print identity
-                print move, bestValue
-                #print currentNode.level
+                bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,alpha, beta,currentNode.move,currentNode.level)
                 move =currentNode.move
-                if bestValue < currentBestValue:
-                    currentBestValue = bestValue
+                if bestValue < beta:
+                    beta = bestValue
                     bestMove = move
-                print "7777777777777"
-            return currentBestValue, bestMove
+                if beta <= alpha:
+                    return alpha, bestMove
+            return beta, bestMove
 
     def tellMinMax(self, level):
         if level % 2 == 0 and level:
