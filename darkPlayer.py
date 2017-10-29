@@ -36,11 +36,12 @@ class Player:
         currentState = Node(gameBoard,None,level,move)
         for start in possibleMoves.keys():
             for end in possibleMoves[start]:
-                game = copy.deepcopy(gameBoard)
-                game.board = game.updateBoard(start,end,cell)
-                newNode = Node(game, currentState, currentState.level+1,(start,end))
-                frontier.push(newNode)
-        if self.tellMinMax(level) :
+                if end:
+                    game = copy.deepcopy(gameBoard)
+                    game.board = game.updateBoard(start,end,cell)
+                    newNode = Node(game, currentState, currentState.level+1,(start,end))
+                    frontier.push(newNode)
+        if self.tellMinMax(level+1) :
             currentBestValue = -9999
             print "MAX"
             currentState.gameBoard.drawBoard()
@@ -53,11 +54,10 @@ class Player:
                 bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
                 print identity
                 print move, bestValue
-                #print currentNode.level
+                move = currentNode.move
                 if bestValue > currentBestValue:
                     currentBestValue = bestValue
                     bestMove = move
-                #print currentBestValue
                 print "*****************************"
             return currentBestValue, bestMove
         else:
@@ -70,12 +70,11 @@ class Player:
                     newID = LIGHTPLAYER
                 else:
                     newID = DARKPLAYER
-                print "ID"
-                print newID
                 bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
                 print identity
                 print move, bestValue
                 #print currentNode.level
+                move =currentNode.move
                 if bestValue < currentBestValue:
                     currentBestValue = bestValue
                     bestMove = move

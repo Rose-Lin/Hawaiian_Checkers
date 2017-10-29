@@ -2,8 +2,8 @@ import sys
 sys.path.append('./')
 class Node:
 
-    def __init__(self, gameBoard, parentBoard, level,move):
+    def __init__(self, gameBoard, parentNode, level,move):
         self.gameBoard = gameBoard
-        self.parentBoard = parentBoard
+        self.parentNode = parentNode
         self.level = level
         self.move = move
