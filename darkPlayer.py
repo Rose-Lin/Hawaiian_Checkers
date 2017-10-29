@@ -30,7 +30,7 @@ class Player:
             cell = LIGHT
         if level == depth_limit:
             return self.evaluation(gameBoard,identity), move
-        possibleMoves = self.generatePossibleMoves(gameBoard, identity)
+        possibleMoves = self.availableMoves(gameBoard, identity)
         print possibleMoves
         frontier = util.Queue()
         currentState = Node(gameBoard,None,level,move)
@@ -44,6 +44,7 @@ class Player:
         if self.tellMinMax(level+1) :
             currentBestValue = -9999
             currentState.gameBoard.drawBoard()
+            bestMove = currentState.move
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
                 if identity:
@@ -52,6 +53,8 @@ class Player:
                     newID = DARKPLAYER
                 bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit, alpha, beta, currentNode.move,currentNode.level)
                 move = currentNode.move
+                if self.win(identity,currentNode.gameBoard):
+                    bestValue = -9999
                 if bestValue > alpha:
                     alpha = bestValue
                     bestMove = move
@@ -61,6 +64,7 @@ class Player:
         else:
             currentBestValue = 9999
             currentState.gameBoard.drawBoard()
+            bestMove = currentState.move
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
                 if identity:
@@ -69,6 +73,8 @@ class Player:
                     newID = DARKPLAYER
                 bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,alpha, beta,currentNode.move,currentNode.level)
                 move =currentNode.move
+                if self.win(identity,currentNode.gameBoard):
+                    bestValue = 9999
                 if bestValue < beta:
                     beta = bestValue
                     bestMove = move
@@ -123,15 +129,13 @@ class Player:
         possibleMoves = self.__generatePossibleMoves_Helper(gameBoard, moveable, unmoveable, emptyCells)
         possibleMoves = self.__generateMultipleJumps(identity, possibleMoves, gameBoard, unmoveable, emptyCells)
         return possibleMoves
-        #return self.__generateMultipleJumps(identity, possibleMoves, gameBoard, moveable, unmoveable, emptyCells)
 
     def __generateMultipleJumps(self, identity, possibleMoves, gameBoard, unmoveable, emptyCells):
         game = copy.deepcopy(gameBoard)
         empty = copy.deepcopy(emptyCells)
         p = copy.deepcopy(possibleMoves)
         for move in possibleMoves.keys():
-            #int (math.log(gameBoard.width,2))
-            p = self.__generateMultipleJumps_Helper(p, game, move, unmoveable, empty, identity, 3)
+            p = self.__generateMultipleJumps_Helper(p, game, move, unmoveable, empty, identity,int (math.log(gameBoard.width,2)) )
         return p
 
     #change the endPositions in possibleMoves, if the check can jump over multiple times
@@ -201,9 +205,16 @@ class Player:
 
     #not finished
     #determines who wins
+    #gameBoard already updated based on the move
     def win(self, identity, gameBoard):
-        if not self.generatePossibleMoves(gameBoard, identity):
-            return False
+        if identity:
+            newID = LIGHTPLAYER
+        else:
+            newID = DARKPLAYER
+        otherP_possibleMoves = self.availableMoves(gameBoard, newID)
+        if not otherP_possibleMoves:
+            return True
+        return False
 
     #for a given move, return the features of cell east to it
     #return (check, celPosition)
@@ -237,7 +248,7 @@ class Player:
             moveable = gameBoard.getDarkCell()
             jumpOver = LIGHT
         else:
-            movable = gameBoard.getLightCell()
+            moveable = gameBoard.getLightCell()
             jumpOver = DARK
         for move in moveable:
             eastMove = []
@@ -300,5 +311,3 @@ class Player:
                 game.updateBoard(southPosition, emptyPosition, identity)
                 self.jumpToSouth(result, game, identity, jumpOver, emptyPosition)
         return result
-
-#missing multiple jumps situation
