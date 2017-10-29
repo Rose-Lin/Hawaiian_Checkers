@@ -1,6 +1,5 @@
 import sys
 sys.path.append('./')
-import gameBoard
 class Node:
 
     def __init__(self, gameBoard, parentBoard, level,move):

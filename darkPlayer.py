@@ -23,12 +23,16 @@ class Player:
         self.moves = moves
         self.round = round
 
-    def minimax(self, cell, gameBoard,depth_limit,move=None,level=1 ):
+    def minimax(self, identity, gameBoard,depth_limit,move=None,level=0 ):
+        if identity:
+            cell = DARK
+        else:
+            cell = LIGHT
         if level == depth_limit:
-            return self.evaluation(gameBoard,cell), move
-        possibleMoves = self.generatePossibleMoves(gameBoard, cell)
+            return self.evaluation(gameBoard,identity), move
+        possibleMoves = self.generatePossibleMoves(gameBoard, identity)
+        print possibleMoves
         frontier = util.Queue()
-
         currentState = Node(gameBoard,None,level,move)
         for start in possibleMoves.keys():
             for end in possibleMoves[start]:
@@ -36,54 +40,59 @@ class Player:
                 game.board = game.updateBoard(start,end,cell)
                 newNode = Node(game, currentState, currentState.level+1,(start,end))
                 frontier.push(newNode)
-        if self.tellMinMax(level):
+        if self.tellMinMax(level) :
             currentBestValue = -9999
-            print "Current Board"
+            print "MAX"
             currentState.gameBoard.drawBoard()
             while not frontier.isEmpty():
-                print level, cell
-                print "---------------------"
                 currentNode = frontier.pop()
-                currentNode.gameBoard.drawBoard()
-                bestValue, move = self.minimax(cell, currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
+                if identity:
+                    newID = LIGHTPLAYER
+                else:
+                    newID = DARKPLAYER
+                bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
+                print identity
                 print move, bestValue
-                print currentNode.level
+                #print currentNode.level
                 if bestValue > currentBestValue:
                     currentBestValue = bestValue
                     bestMove = move
+                #print currentBestValue
                 print "*****************************"
             return currentBestValue, bestMove
         else:
-            #print MIN, level
             currentBestValue = 9999
+            print "MIN"
+            currentState.gameBoard.drawBoard()
             while not frontier.isEmpty():
-                print level, cell
                 currentNode = frontier.pop()
-                currentNode.gameBoard.drawBoard()
-                if cell == DARK:
-                    newID = LIGHT
+                if identity:
+                    newID = LIGHTPLAYER
                 else:
-                    newID = DARK
+                    newID = DARKPLAYER
+                print "ID"
+                print newID
                 bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
+                print identity
                 print move, bestValue
-                print currentNode.level
+                #print currentNode.level
                 if bestValue < currentBestValue:
                     currentBestValue = bestValue
                     bestMove = move
-                print "*****************************"
+                print "7777777777777"
             return currentBestValue, bestMove
 
     def tellMinMax(self, level):
-        if level % 2 == 0:
+        if level % 2 == 0 and level:
             return MIN
         return MAX
 
-    def evaluation(self, gameBoard,cell):
+    def evaluation(self, gameBoard,identity):
         darkCells = gameBoard.getDarkCell()
         lightCells = gameBoard.getLightCell()
         darkScore = len(darkCells)
         lightScore = len(lightCells)
-        if cell == DARK:
+        if not identity:
             return darkScore - lightScore
         else:
             return lightScore - darkScore
