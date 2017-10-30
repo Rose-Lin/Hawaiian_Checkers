@@ -18,9 +18,9 @@ POSSIBLE_FIRST_MOVE_DARK = [(8,8),(1,1),(5,5),(4,4)]
 
 class Player:
 
-    def __init__(self, identity, round, moves):
+    def __init__(self, identity, round ):
         self.identity = identity
-        self.moves = moves
+        # self.moves = moves
         self.round = round
 
     def minimax(self, identity, gameBoard,depth_limit,alpha = -9999, beta = 9999, move=None,level=0 ):
@@ -31,7 +31,6 @@ class Player:
         if level == depth_limit:
             return self.evaluation(gameBoard,identity), move
         possibleMoves = self.availableMoves(gameBoard, identity)
-        print possibleMoves
         frontier = util.Queue()
         currentState = Node(gameBoard,None,level,move)
         for start in possibleMoves.keys():
@@ -43,7 +42,6 @@ class Player:
                     frontier.push(newNode)
         if self.tellMinMax(level+1) :
             currentBestValue = -9999
-            currentState.gameBoard.drawBoard()
             bestMove = currentState.move
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
@@ -53,7 +51,7 @@ class Player:
                     newID = DARKPLAYER
                 bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit, alpha, beta, currentNode.move,currentNode.level)
                 move = currentNode.move
-                if self.win(identity,currentNode.gameBoard):
+                if self.win(currentNode.gameBoard):
                     bestValue = -9999
                 if bestValue > alpha:
                     alpha = bestValue
@@ -63,7 +61,6 @@ class Player:
             return alpha, bestMove
         else:
             currentBestValue = 9999
-            currentState.gameBoard.drawBoard()
             bestMove = currentState.move
             while not frontier.isEmpty():
                 currentNode = frontier.pop()
@@ -73,7 +70,7 @@ class Player:
                     newID = DARKPLAYER
                 bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,alpha, beta,currentNode.move,currentNode.level)
                 move =currentNode.move
-                if self.win(identity,currentNode.gameBoard):
+                if self.win(currentNode.gameBoard):
                     bestValue = 9999
                 if bestValue < beta:
                     beta = bestValue
@@ -203,11 +200,10 @@ class Player:
                 return True
         return False
 
-    #not finished
     #determines who wins
     #gameBoard already updated based on the move
-    def win(self, identity, gameBoard):
-        if identity:
+    def win(self, gameBoard):
+        if self.identity:
             newID = LIGHTPLAYER
         else:
             newID = DARKPLAYER
@@ -319,3 +315,9 @@ class Player:
             if end in availableMoves[start]:
                 return True
         return False
+
+    def roundIncrement(self):
+        self.round += 1
+
+    def getRound(self):
+        return self.round
