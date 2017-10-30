@@ -311,3 +311,11 @@ class Player:
                 game.updateBoard(southPosition, emptyPosition, identity)
                 self.jumpToSouth(result, game, identity, jumpOver, emptyPosition)
         return result
+
+    #given a move of a player, return true if the move is legal and false otherwise
+    def testLegatMove(self, gameBoard, identity, start, end):
+        availableMoves = self.availableMoves(gameBoard, identity)
+        if start in availableMoves.keys():
+            if end in availableMoves[start]:
+                return True
+        return False
