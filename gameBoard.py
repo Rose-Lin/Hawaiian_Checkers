@@ -23,7 +23,9 @@ class gameBoard:
 
     def drawBoard(self):
         for row in self.board:
-            print row
+            for col in row:
+                print col,
+            print
 
     def updateBoard(self, remove, add, identity):
         self.board[remove[0]-1][remove[1]-1] = EMPTY
