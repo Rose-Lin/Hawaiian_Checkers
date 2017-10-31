@@ -66,12 +66,12 @@ def main():
     firstRound(agent, opponent, gameboard)
     while not agent.win(gameboard) and not opponent.win(gameboard):
         if agent.identity:
-            move = agent.minimax(agent.identity, gameboard,2)[1]
+            move = agent.minimax(agent.identity, gameboard,4)[1]
             print "This is my move: "+ str(move)
             gameboard.updateBoard(move[0], move[1], DARK)
             gameboard.drawBoard()
-            move = askForMove(opponent, gameboard)
-            if not opponent.win(gameboard):
+            if not agent.win(gameboard):
+                move = askForMove(opponent, gameboard)
                 print "This is your move: " + str(move)
                 gameboard.updateBoard(move[0], move[1], LIGHT)
                 gameboard.drawBoard()
@@ -84,10 +84,13 @@ def main():
             print "This is your move: " + str(move)
             gameboard.updateBoard(move[0], move[1] , DARK)
             gameboard.drawBoard()
-            move = agent.minimax(agent.identity, gameboard, 2)[1]
-            print "This is my move: "+ str(move)
-            gameboard.updateBoard(move[0], move[1], LIGHT)
-            gameboard.drawBoard()
+            if not opponent.win(gameboard):
+                move = agent.minimax(agent.identity, gameboard, 4)[1]
+                print "This is my move: "+ str(move)
+                gameboard.updateBoard(move[0], move[1], LIGHT)
+                gameboard.drawBoard()
+            else:
+                break
             agent.roundIncrement()
             opponent.roundIncrement()
     if agent.win(gameboard):
@@ -104,9 +107,13 @@ main()
 # game.updateBoard(move, None, DARK)
 # move = l.generateFirstMove_Light(move, game)
 # game.updateBoard(move, None, LIGHT)
-# for i in range (1,6):
+#
+# for i in range (1,8):
 #     for j in range (1,9):
 #         game.board[i-1][j-1] = EMPTY
+# for j in range(3,9):
+#     game.board[7][j-1] = EMPTY
+# print d.win(game)
 # game.updateBoard((6,2), None, DARK)
 # game.updateBoard((4,2), None, DARK)
 # game.updateBoard((2,2), None, DARK)
@@ -124,30 +131,9 @@ main()
 # game.updateBoard((4,6), None, DARK)
 # print "--------"
 # game.drawBoard()
-# moveable = game.getDarkCell()
-# unmoveable = game.getLightCell()
-# emptyCells = game.getEmptyCell()
-# p = d.generatePossibleMoves(game, DARKPLAYER)
-# pl = l.generatePossibleMoves(game, LIGHTPLAYER)
-#print "DARKPLAYER"
-#print p
-#print "LIGHTPLAYER"
-#print pl
-#print "----------"
 # result = d.availableMoves(game,DARKPLAYER)
 # print result
-# # print p
 # print "********"
-# var = raw_input("Which piece do you want to move:")
-# pieces = var.split(",")
-# start = (int (pieces[0]), int (pieces[1]))
-# var = raw_input("which position do you want to jump to: ")
-# pieces = var.split(",")
-# end = (int (pieces[0]), int (pieces[1]))
-# print d.testLegatMove(game, LIGHTPLAYER, start, end)
-#
-# #print result
-# #game.updateBoard((6,4),(6,2),DARK)
 # game.drawBoard()
 # print "#DARK: " + str(len(moveable))
 # print "#LIGHT: " + str(len(unmoveable))

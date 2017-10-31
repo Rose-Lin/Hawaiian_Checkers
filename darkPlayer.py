@@ -208,9 +208,10 @@ class Player:
         else:
             newID = DARKPLAYER
         otherP_possibleMoves = self.availableMoves(gameBoard, newID)
-        if not otherP_possibleMoves:
-            return True
-        return False
+        for move in otherP_possibleMoves.keys():
+            if otherP_possibleMoves[move] :
+                return False
+        return True
 
     #for a given move, return the features of cell east to it
     #return (check, celPosition)
