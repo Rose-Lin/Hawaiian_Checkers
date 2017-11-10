@@ -1,11 +1,13 @@
 import sys
-sys.path.append('./')
+sys.path.append("./")
 from gameBoard import *
 from darkPlayer import *
 import random
 
-#get agent's identity based on my choice
 def getIdentity():
+    '''
+    Get agent's identity based on user input
+    '''
     opponent_piece = raw_input("Choose your color, light or dark? ")
     if opponent_piece.upper() == "DARK":
         opponent = DARKPLAYER
@@ -20,9 +22,9 @@ def getIdentity():
         return getIdentity()
 
 def firstRound(agent, opponent, gameboard):
-    #if computer agent is LIGHTPLAYER, ask for the move from the LIGHTPLAYER before the first move of agent
+    # if computer agent is LIGHTPLAYER, ask for the move from the LIGHTPLAYER before the first move of agent
     if not agent.identity :
-        #ask for DARKPLAYER's move
+        # ask for DARKPLAYER's move
         s = raw_input("Which piece do you want to remove? (Format: row, col)")
         pieces = s.split(",")
         darkmove = (int (pieces[0]), int (pieces[1]))
@@ -33,7 +35,7 @@ def firstRound(agent, opponent, gameboard):
         print "I want to remove: " + str(firstmove)
         gameboard.updateBoard(firstmove,None, agent.identity)
         gameboard.drawBoard()
-    #if computer agent is DARKPLAYER, ask for the move from the LIGHTPLAYER after the first move of agent
+    # if computer agent is DARKPLAYER, ask for the move from the LIGHTPLAYER after the first move of agent
     else:
         firstmove = agent.generateFirstMove_Dark()
         print "I want to remove: " + str(firstmove)
@@ -54,7 +56,7 @@ def askForMove(opponent, gameboard):
     s = raw_input("which position do you want to jump to: ")
     pieces = s.split(",")
     end = (int (pieces[0]), int (pieces[1]))
-    legal = opponent.testLegatMove(gameboard,opponent.identity,start, end)
+    legal = opponent.testLegalMove(gameboard,opponent.identity,start, end)
     if legal:
         return (start, end)
     else:
@@ -72,10 +74,15 @@ def main():
         agent.roundIncrement()
         opponent.roundIncrement()
         if agent.identity:
-            move = agent.minimax(agent.identity, gameboard,4)[1]
-            print "This is my move: "+ str(move)
-            gameboard.updateBoard(move[0], move[1], DARK)
-            gameboard.drawBoard()
+            move = agent.minimax(agent.identity, gameboard,1)[1]
+            if move:
+                print "This is my move: "+ str(move)
+                gameboard.updateBoard(move[0], move[1], DARK)
+                gameboard.drawBoard()
+            else:
+                print "i do not have any move left!"
+                print "You win!"
+                break
             if check_Win(agent, opponent,gameboard):
                 break
             move = askForMove(opponent, gameboard)
@@ -91,10 +98,15 @@ def main():
             gameboard.drawBoard()
             if check_Win(agent, opponent,gameboard):
                 break
-            move = agent.minimax(agent.identity, gameboard, 4)[1]
-            print "This is my move: "+ str(move)
-            gameboard.updateBoard(move[0], move[1], LIGHT)
-            gameboard.drawBoard()
+            move = agent.minimax(agent.identity, gameboard, 1)[1]
+            if move:
+                print "This is my move: "+ str(move)
+                gameboard.updateBoard(move[0], move[1], LIGHT)
+                gameboard.drawBoard()
+            else:
+                print "i do not have any move left!"
+                print "You win!"
+                break
             if check_Win(agent, opponent, gameboard):
                 break
 

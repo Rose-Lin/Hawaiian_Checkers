@@ -18,27 +18,108 @@ POSSIBLE_FIRST_MOVE_DARK = [(8,8),(1,1),(5,5),(4,4)]
 
 class Player:
 
-    def __init__(self, identity, round ):
+    def __init__(self, identity, round, total_eval=0, cutoffs=0, branch_factor=[]):
+        '''
+        identity : int (DARKPLAYER or LIGHTPLAYER)
+        round : int
+        '''
         self.identity = identity
         self.round = round
+        self.total_eval = total_eval
+        self.cutoffs = cutoffs
+        self.branch_factor = branch_factor
 
-    def minimax(self, identity, gameBoard,depth_limit,alpha = -9999, beta = 9999, move=None,level=1 ):
+    def minimax_alpha_beta(self, identity, gameBoard, depth_limit, alpha = -9999, beta = 9999, move=None,level=0 ):
+        '''
+        Minimax algorithm with alpha-beta pruning
+        identity : int (DARKPLAYER or LIGHTPLAYER)
+        gameBoard : gameBoard
+        depth_limit : int
+        move : (int,int)
+        level : int
+        '''
         if identity:
             cell = DARK
         else:
             cell = LIGHT
         if level == depth_limit:
+            self.total_eval += 1
             return self.evaluation(gameBoard,identity), move
         possibleMoves = self.availableMoves(gameBoard, identity)
         frontier = util.Queue()
         currentState = Node(gameBoard,None,level,move)
+        branch = 0
         for start in possibleMoves.keys():
             for end in possibleMoves[start]:
                 if end:
+                    branch += 1
                     game = copy.deepcopy(gameBoard)
                     game.board = game.updateBoard(start,end,cell)
                     newNode = Node(game, currentState, currentState.level+1,(start,end))
                     frontier.push(newNode)
+        self.branch_factor.append(branch)
+        if self.tellMinMax(level):
+            bestMove = currentState.move
+            while not frontier.isEmpty():
+                currentNode = frontier.pop()
+                if identity:
+                    newID = LIGHTPLAYER
+                else:
+                    newID = DARKPLAYER
+                if self.lose(currentState.gameBoard):
+                    bestValue = -9998
+                else:
+                    bestValue, move = self.minimax_alpha_beta(newID, currentNode.gameBoard,depth_limit, alpha, beta, currentNode.move,currentNode.level)
+                move = currentNode.move
+                if bestValue > alpha:
+                    alpha = bestValue
+                    bestMove = move
+                if alpha >= beta:
+                    self.cutoffs += 1
+                    return beta, bestMove
+            return alpha, bestMove
+        else:
+            bestMove = currentState.move
+            while not frontier.isEmpty():
+                currentNode = frontier.pop()
+                if identity:
+                    newID = LIGHTPLAYER
+                else:
+                    newID = DARKPLAYER
+                if self.lose(currentNode.gameBoard):
+                    bestValue = -9998
+                else:
+                    bestValue, move = self.minimax_alpha_beta(newID,currentNode.gameBoard,depth_limit,alpha, beta,currentNode.move,currentNode.level)
+                move = currentNode.move
+                if bestValue < beta:
+                    beta = bestValue
+                    bestMove = move
+                if beta <= alpha:
+                    self.cutoffs += 1
+                    return alpha, bestMove
+            return beta, bestMove
+
+    def minimax(self, identity, gameBoard,depth_limit, move=None,level=0 ):
+        if identity:
+            cell = DARK
+        else:
+            cell = LIGHT
+        if level == depth_limit:
+            self.total_eval += 1
+            return self.evaluation(gameBoard,identity), move
+        possibleMoves = self.availableMoves(gameBoard, identity)
+        frontier = util.Queue()
+        currentState = Node(gameBoard,None,level,move)
+        branch = 0
+        for start in possibleMoves.keys():
+            for end in possibleMoves[start]:
+                if end:
+                    branch += 1
+                    game = copy.deepcopy(gameBoard)
+                    game.board = game.updateBoard(start,end,cell)
+                    newNode = Node(game, currentState, currentState.level+1,(start,end))
+                    frontier.push(newNode)
+        self.branch_factor.append(branch)
         if self.tellMinMax(level+1) :
             currentBestValue = -9999
             bestMove = currentState.move
@@ -48,16 +129,12 @@ class Player:
                     newID = LIGHTPLAYER
                 else:
                     newID = DARKPLAYER
-                bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit, alpha, beta, currentNode.move,currentNode.level)
+                bestValue, move = self.minimax(newID, currentNode.gameBoard,depth_limit, currentNode.move,currentNode.level)
                 move = currentNode.move
-                if self.win(currentNode.gameBoard):
-                    bestValue = -9999
-                if bestValue > alpha:
-                    alpha = bestValue
+                if currentBestValue < bestValue:
+                    currentBestValue = bestValue
                     bestMove = move
-                if alpha >= beta:
-                    return beta, bestMove
-            return alpha, bestMove
+            return currentBestValue, bestMove
         else:
             currentBestValue = 9999
             bestMove = currentState.move
@@ -67,23 +144,25 @@ class Player:
                     newID = LIGHTPLAYER
                 else:
                     newID = DARKPLAYER
-                bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,alpha, beta,currentNode.move,currentNode.level)
+                bestValue, move = self.minimax(newID,currentNode.gameBoard,depth_limit,currentNode.move,currentNode.level)
                 move =currentNode.move
-                if self.win(currentNode.gameBoard):
-                    bestValue = 9999
-                if bestValue < beta:
-                    beta = bestValue
+                if currentBestValue > bestValue:
+                    currentBestValue = bestValue
                     bestMove = move
-                if beta <= alpha:
-                    return alpha, bestMove
-            return beta, bestMove
+            return currentBestValue, bestMove
 
     def tellMinMax(self, level):
+        '''
+        Given level, return FALSE if MIN level, and TRUE if MAX level
+        '''
         if level % 2 == 0:
             return MIN
         return MAX
 
     def evaluation(self, gameBoard,identity):
+        '''
+        Evaluate a gameBoard based on identity. Evaluation based on remaining dark and light pieces.
+        '''
         darkCells = gameBoard.getDarkCell()
         lightCells = gameBoard.getLightCell()
         darkScore = len(darkCells)
@@ -92,15 +171,17 @@ class Player:
             return darkScore - lightScore
         else:
             return lightScore - darkScore
-
-    #The first move for DARKPLAYER
     def generateFirstMove_Dark(self):
+        '''
+        Generate the first move for DARKPLAYER
+        '''
         i = randint(0,3)
         return POSSIBLE_FIRST_MOVE_DARK[i]
 
-    #The first move for LIGHTPLAYER
-    #The LIGHTPLAYER can remove a check adjacent to the check DARKPLAYER removed
     def generateFirstMove_Light(self, darkMove, gameBoard):
+        '''
+        Generate the first move for LIGHTPLAYER. Must be piece adjacent to the piece DARKPLAYER removed
+        '''
         adjs = [1,-1]
         light_moves = []
         light_move = ()
@@ -114,9 +195,10 @@ class Player:
         i = randint(0,len(light_moves)-1)
         return light_moves[i]
 
-    #determines who wins
-    #gameBoard already updated based on the move
     def win(self, gameBoard):
+        '''
+        Given gameBoard, determine who wins.
+        '''
         if self.identity:
             newID = LIGHTPLAYER
         else:
@@ -127,8 +209,16 @@ class Player:
                 return False
         return True
 
-    #for a given move, return the features of cell east to it
-    #return (check, celPosition)
+    def lose(self, gameBoard):
+        '''
+        Given gameBoard, determine if agent loses (no moves left)
+        '''
+        possibleMoves = self.availableMoves(gameBoard, self.identity)
+        for move in possibleMoves.keys():
+            if possibleMoves[move] :
+                return False
+        return True
+
     def getEast (self, gameBoard, move):
         if not move[1] == gameBoard.width:
             eastMove = (move[0], move[1]+1)
@@ -154,6 +244,9 @@ class Player:
         return None, None
 
     def availableMoves(self, gameBoard, identity):
+        '''
+        Given gameBoard and identity, returns dictionary of legal moves.
+        '''
         result = {}
         if identity:
             moveable = gameBoard.getDarkCell()
@@ -173,8 +266,6 @@ class Player:
             result[move] = eastMove + westMove + northMove + southMove
         return result
 
-    #jump to east for a single check
-    #return a list of possible end position for the check
     def jumpToEast(self, result, gameBoard, identity, jumpOver, moveable):
         game = copy.deepcopy(gameBoard)
         eastCell, eastPosition = self.getEast(gameBoard, moveable)
@@ -223,8 +314,11 @@ class Player:
                 self.jumpToSouth(result, game, identity, jumpOver, emptyPosition)
         return result
 
-    #given a move of a player, return true if the move is legal and false otherwise
-    def testLegatMove(self, gameBoard, identity, start, end):
+    def testLegalMove(self, gameBoard, identity, start, end):
+        '''
+        Returns whether a given move is legal or not.
+        Used to test the move of the other player.
+        '''
         availableMoves = self.availableMoves(gameBoard, identity)
         if start in availableMoves.keys():
             if end in availableMoves[start]:
